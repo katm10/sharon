@@ -37,35 +37,40 @@ namespace OutlookAddIn1
             }
 
             Outlook.ContactItem sender = AddContact(mail.Sender.Address);
-
-            if (mail != null)
+            if (mail.Sender.Address == sender.Email1Address)
             {
-                if (mail.MessageClass == "IPM.Note" && mail.Subject.ToUpper().Contains("SMS EMAIL".ToUpper()))
+                if (mail != null)
                 {
-                    sendFirstEmail(Item, 1);
-                    Outlook.ContactItem contact = mail.Sender.GetContact();
-                    if (contact != null)
-                    { 
-                        string sms = mail.Body;
-                        contact.Email2Address = sms;
-                    }
-                }
-                else if (mail.MessageClass == "IPM.Note" && mail.Subject.ToUpper().Contains("ZIP CODE"))
-                {
-                    sendFirstEmail(Item, 2);
-                    Outlook.ContactItem contact = mail.Sender.GetContact();
-                    if (contact != null)
+                    if (mail.MessageClass == "IPM.Note" && mail.Subject.ToUpper().Contains("SMS EMAIL".ToUpper()))
                     {
-                        string zip = mail.Body;
-                        contact.Email2DisplayName = zip;
-                        SendFirstText(contact);
+                        sendFirstEmail(Item, 1);
+                        if (sender != null)
+                        {
+                            string sms = mail.Body;
+                            sender.Email2Address = sms;
+                            sender.Save();
+                        }
                     }
-                }
-                else
-                {
-                    sendFirstEmail(Item, 0);
-                }
+                    else if (mail.MessageClass == "IPM.Note" && mail.Subject.ToUpper().Contains("ZIP CODE"))
+                    {
+                        sendFirstEmail(Item, 2);
+                        if (sender != null)
+                        {
+                            string zip = mail.Body;
+                            sender.Email2DisplayName = zip;
+                            sender.Save();
+                            SendFirstText(sender);
+                        }
+                    }
+                    else
+                    {
+                        sendFirstEmail(Item, 0);
+                    }
 
+                }
+            }else if (mail.Sender.Address == sender.Email2Address)
+            {
+                sendText(mail);
             }
     }
 
@@ -96,6 +101,31 @@ namespace OutlookAddIn1
             response.Send();
         }
 
+        public void sendText(Outlook.MailItem mail)
+        {
+            Outlook.MailItem response = mail.Reply();
+            string body;
+            switch (mail.Body.ToUpper())
+            {
+                case "CHAT":
+                    body = "Please go to https://tlk.io/ and make a chat room. Then, respond with only the link.";
+                    break;
+                case "POLL":
+                    body = "Please go http://www.poll-maker.com/ and make a poll. Then, respond with only the link.";
+                    break;
+                case "PETITION":
+                    body = "Please go to http://www.change.org and make a petition. Then, respond with only the link.";
+                    break;
+                case "CALL":
+                    body = "Please go to http://whoismyrepresentative.com/ to learn about how to reach your representatives.";
+                    break;
+                default:
+                    body = "Sorry, I didn't get that. Please type 'CHAT', 'POLL', 'PETITION' OR 'CALL'.";
+                    break;
+            }
+
+            response.Body = body;
+        }
         private void CreateEmailItem(string subjectEmail,
                string toEmail, string bodyEmail)
         {
@@ -136,7 +166,9 @@ namespace OutlookAddIn1
             try
             {
                 newContact.FirstName = "contact placeholder";
-                newContact.Email1Address = "katm10@live.com";
+                newContact.Email1Address = mailAddress;
+                newContact.Save();
+                newContact.Display(true);
             }
             catch
             {
@@ -144,9 +176,10 @@ namespace OutlookAddIn1
             } return newContact;
         }
 
+
         private void SendFirstText(Outlook.ContactItem contact)
         {
-            string bodyEmail = "Hello! Welcome to the Sharon Community! You are part of the" + contact.Email2DisplayName + "community. If you want to change your zip code, write an email to sharoncommunity@outlook.com with only your zip code and make the subject 'Zip Code'. If you would like to stop recieving texts, text 'STOP'. ";
+            string bodyEmail = $"Hello! Welcome to the Sharon Community! You are part of the {contact.FirstName} community. If you want to change your zip code, write an email to sharoncommunity@outlook.com with only your zip code and make the subject 'Zip Code'. If you would like to stop recieving texts, text 'STOP'. ";
             CreateEmailItem(null, contact
                         .Email2Address, bodyEmail);
         }
