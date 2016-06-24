@@ -123,6 +123,13 @@ namespace OutlookAddIn1
             newContact.Email1Address = mailAddress;
         }
 
+        private void SendFirstText(Outlook.ContactItem contact)
+        {
+            string bodyEmail = "Hello! Welcome to the Sharon Community! You are part of the" + contact.Email2DisplayName + "community. If you want to change your zip code, write an email to sharoncommunity@outlook.com with only your zip code and make the subject 'Zip Code'. If you would like to stop recieving texts, text 'STOP'. ";
+            this.CreateEmailItem(null, contact
+                        .Email2Address, bodyEmail);
+        }
+
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
             // Note: Outlook no longer raises this event. If you have code that 
