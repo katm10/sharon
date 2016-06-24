@@ -76,7 +76,7 @@ namespace OutlookAddIn1
                     bodyEmail = "Thank you! You should recieve your first text soon.";
                     break;
                 default:
-                    bodyEmail = "Sorry, I don't understand that. Please refer to http://sharontherobot.squarespace.com"
+                    bodyEmail = "Sorry, I don't understand that. Please refer to http://sharontherobot.squarespace.com";
                         break;
             }
             
