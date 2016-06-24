@@ -32,18 +32,13 @@ namespace OutlookAddIn1
             {
                 AddContact(mail.SenderEmailAddress);
             }
-            if (Item != null)
+            if (mail != null)
             {
-                if (mail.MessageClass == "IPM.Note" &&
-                           mail.Body.ToLower().Contains("sharon"))
-                {
-                    sendFirstEmail(Item, 0);
-                }
-                else if (mail.MessageClass == "IPM.Note" && mail.Subject.ToUpper().Contains("SMS EMAIL"))
+                if (mail.MessageClass == "IPM.Note" && mail.Subject.ToUpper().Contains("SMS EMAIL"))
                 {
                     sendFirstEmail(Item, 1);
                     Outlook.ContactItem contact = mail.Sender.GetContact();
-                    contact.Email2Address = mail.Body;
+                    // make the body a new contact email 2 address
                 }
                 else if (mail.MessageClass == "IPM.Note" && mail.Subject.ToUpper().Contains("ZIP CODE"))
                 {
@@ -53,13 +48,13 @@ namespace OutlookAddIn1
                 }
                 else
                 {
-                    sendFirstEmail(Item, 3);
+                    sendFirstEmail(Item, 0);
                 }
 
             }
     }
 
-        private string sendFirstEmail(object Item, int num)
+        private void sendFirstEmail(object Item, int num)
         {
             Outlook.MailItem mail = (Outlook.MailItem)Item;
             string subjectEmail = "Welcome to your Sharon Community!";
@@ -84,7 +79,6 @@ namespace OutlookAddIn1
             response.Body = bodyEmail;
             response.Subject = subjectEmail;
             response.Send();
-            return response.ConversationID;
         }
 
         private void CreateEmailItem(string subjectEmail,
@@ -120,7 +114,14 @@ namespace OutlookAddIn1
         {
             Outlook.ContactItem newContact = (Outlook.ContactItem)
                 this.Application.CreateItem(Outlook.OlItemType.olContactItem);
-            newContact.Email1Address = mailAddress;
+            try
+            {
+                newContact.Email1Address = mailAddress;
+            }
+            catch
+            {
+                Console.Write(false);
+            }
         }
 
         private void SendFirstText(Outlook.ContactItem contact)
