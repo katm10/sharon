@@ -27,24 +27,39 @@ namespace OutlookAddIn1
 
         void items_ItemAdd(object Item)
         {
-            Outlook.MailItem mail = (Outlook.MailItem)Item;
-            if (!SearchforEmail(mail.SenderEmailAddress))
+            Outlook.MailItem mail;
+            if (Item is Outlook.MailItem)
             {
-                AddContact(mail.SenderEmailAddress);
+                mail = (Outlook.MailItem)Item;
+            }else
+            {
+                return;
             }
+
+            Outlook.ContactItem sender = AddContact(mail.Sender.Address);
+
             if (mail != null)
             {
-                if (mail.MessageClass == "IPM.Note" && mail.Subject.ToUpper().Contains("SMS EMAIL"))
+                if (mail.MessageClass == "IPM.Note" && mail.Subject.ToUpper().Contains("SMS EMAIL".ToUpper()))
                 {
                     sendFirstEmail(Item, 1);
                     Outlook.ContactItem contact = mail.Sender.GetContact();
-                    // make the body a new contact email 2 address
+                    if (contact != null)
+                    { 
+                        string sms = mail.Body;
+                        contact.Email2Address = sms;
+                    }
                 }
                 else if (mail.MessageClass == "IPM.Note" && mail.Subject.ToUpper().Contains("ZIP CODE"))
                 {
                     sendFirstEmail(Item, 2);
                     Outlook.ContactItem contact = mail.Sender.GetContact();
-                    contact.Email2DisplayName = mail.Body;
+                    if (contact != null)
+                    {
+                        string zip = mail.Body;
+                        contact.Email2DisplayName = zip;
+                        SendFirstText(contact);
+                    }
                 }
                 else
                 {
@@ -93,7 +108,7 @@ namespace OutlookAddIn1
             ((Outlook._MailItem)eMail).Send();
         }
 
-        private Boolean SearchforEmail(string Address)
+        private Outlook.ContactItem SearchforEmail(string Address)
         {
             string contactMessage = string.Empty;
             Outlook.MAPIFolder contacts = (Outlook.MAPIFolder)
@@ -105,29 +120,34 @@ namespace OutlookAddIn1
                 {
                     if (foundContact.Email1Address == Address)
                     {
-                        return true;
+                        return foundContact;
                     }
                 }
-            }return false;
+            }return null;
         }
-        private void AddContact(String mailAddress)
+        private Outlook.ContactItem AddContact(String mailAddress)
         {
+            if (SearchforEmail(mailAddress) != null)
+            {
+                return SearchforEmail(mailAddress);
+            }
             Outlook.ContactItem newContact = (Outlook.ContactItem)
                 this.Application.CreateItem(Outlook.OlItemType.olContactItem);
             try
             {
-                newContact.Email1Address = mailAddress;
+                newContact.FirstName = "contact placeholder";
+                newContact.Email1Address = "katm10@live.com";
             }
             catch
             {
-                Console.Write(false);
-            }
+                System.Windows.Forms.MessageBox.Show("no worky");
+            } return newContact;
         }
 
         private void SendFirstText(Outlook.ContactItem contact)
         {
             string bodyEmail = "Hello! Welcome to the Sharon Community! You are part of the" + contact.Email2DisplayName + "community. If you want to change your zip code, write an email to sharoncommunity@outlook.com with only your zip code and make the subject 'Zip Code'. If you would like to stop recieving texts, text 'STOP'. ";
-            this.CreateEmailItem(null, contact
+            CreateEmailItem(null, contact
                         .Email2Address, bodyEmail);
         }
 
