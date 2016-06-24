@@ -30,7 +30,7 @@ namespace OutlookAddIn1
             Outlook.MailItem mail = (Outlook.MailItem)Item;
             if (!SearchforEmail(mail.SenderEmailAddress))
             {
-                AddContact(mail.Sender.GetContact());
+                AddContact(mail.SenderEmailAddress);
             }
             if (Item != null)
             {
@@ -42,11 +42,16 @@ namespace OutlookAddIn1
                 else if (mail.MessageClass == "IPM.Note" && mail.Subject.ToUpper().Contains("SMS EMAIL"))
                 {
                     sendFirstEmail(Item, 1);
+                    Outlook.ContactItem contact = mail.Sender.GetContact();
+                    contact.Email2Address = mail.Body;
                 }
                 else if (mail.MessageClass == "IPM.Note" && mail.Subject.ToUpper().Contains("ZIP CODE"))
                 {
                     sendFirstEmail(Item, 2);
-                }else
+                    Outlook.ContactItem contact = mail.Sender.GetContact();
+                    contact.Email2DisplayName = mail.Body;
+                }
+                else
                 {
                     sendFirstEmail(Item, 3);
                 }
@@ -111,11 +116,11 @@ namespace OutlookAddIn1
                 }
             }return false;
         }
-        private void AddContact(Outlook.ContactItem contact)
+        private void AddContact(String mailAddress)
         {
             Outlook.ContactItem newContact = (Outlook.ContactItem)
                 this.Application.CreateItem(Outlook.OlItemType.olContactItem);
-            newContact = contact;
+            newContact.Email1Address = mailAddress;
         }
 
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
