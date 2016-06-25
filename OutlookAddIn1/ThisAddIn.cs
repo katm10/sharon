@@ -37,7 +37,8 @@ namespace OutlookAddIn1
             }
 
             Outlook.ContactItem sender = AddContact(mail.Sender.Address);
-            if (mail.Sender.Address == sender.Email1Address)
+            string[] splitEmail = mail.Sender.Address.Split('@');
+            if (!IsDigitsOnly(splitEmail[0]))
             {
                 if (mail != null)
                 {
@@ -57,7 +58,7 @@ namespace OutlookAddIn1
                         if (sender != null)
                         {
                             string zip = mail.Body;
-                            sender.Email2DisplayName = zip;
+                            sender.FirstName = zip;
                             sender.Save();
                             SendFirstText(sender);
                         }
@@ -68,7 +69,7 @@ namespace OutlookAddIn1
                     }
 
                 }
-            }else if (mail.Sender.Address == sender.Email2Address)
+            }else
             {
                 sendText(mail);
             }
@@ -105,7 +106,8 @@ namespace OutlookAddIn1
         {
             Outlook.MailItem response = mail.Reply();
             string body;
-            switch (mail.Body.ToUpper())
+            string[] bodySplit = mail.Body.Split('\'');
+            switch (bodySplit[0].ToUpper())
             {
                 case "CHAT":
                     body = "Please go to https://tlk.io/ and make a chat room. Then, respond with only the link.";
@@ -123,8 +125,9 @@ namespace OutlookAddIn1
                     body = "Sorry, I didn't get that. Please type 'CHAT', 'POLL', 'PETITION' OR 'CALL'.";
                     break;
             }
-
+            response.Subject = null;
             response.Body = body;
+            response.Send();
         }
         private void CreateEmailItem(string subjectEmail,
                string toEmail, string bodyEmail)
@@ -168,7 +171,6 @@ namespace OutlookAddIn1
                 newContact.FirstName = "contact placeholder";
                 newContact.Email1Address = mailAddress;
                 newContact.Save();
-                newContact.Display(true);
             }
             catch
             {
@@ -182,6 +184,17 @@ namespace OutlookAddIn1
             string bodyEmail = $"Hello! Welcome to the Sharon Community! You are part of the {contact.FirstName} community. If you want to change your zip code, write an email to sharoncommunity@outlook.com with only your zip code and make the subject 'Zip Code'. If you would like to stop recieving texts, text 'STOP'. ";
             CreateEmailItem(null, contact
                         .Email2Address, bodyEmail);
+        }
+
+        public bool IsDigitsOnly(string str)
+        {
+            foreach (char c in str)
+            {
+                if (c < '0' || c > '9')
+                    return false;
+            }
+
+            return true;
         }
 
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
