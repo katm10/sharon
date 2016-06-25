@@ -115,28 +115,44 @@ namespace OutlookAddIn1
         {
             Outlook.MailItem response = mail.Reply();
             string body;
-            string[] body2Split = mail.Body.Split('.');
-            switch (body2Split[0].ToUpper())
+            string[] body2Split = mail.Body.Split('~');
+           
+            if (isUrl(body2Split[0]))
             {
-                case "CHAT":
-                    body = "Please go to https://tlk.io/ and make a chat room. Then, respond with only the link.";
-                    break;
-                case "POLL":
-                    body = "Please go http://www.poll-maker.com/ and make a poll. Then, respond with only the link.";
-                    break;
-                case "PETITION":
-                    body = "Please go to http://www.change.org and make a petition. Then, respond with only the link.";
-                    break;
-                case "CALL":
-                    body = "Please go to http://whoismyrepresentative.com/ to learn about how to reach your representatives.";
-                    break;
-                default:
-                    body = "Sorry, I didn't get that. Please type 'Chat.', 'Poll.', 'Petition.' OR 'Call.'.";
-                    break;
+                string zip = AddContact(mail.SenderEmailAddress).FirstName;
+                string url = body2Split[0];
+                List<Outlook.ContactItem> zipContacts = findZipContacts(zip);
+                foreach (Outlook.ContactItem contact in zipContacts)
+                {
+                    this.CreateEmailItem(null, contact
+                        .Email2Address, url);
+                }
+
             }
-            response.Subject = null;
-            response.Body = body;
-            response.Send();
+            else
+            {
+                switch (body2Split[0].ToUpper())
+                {
+                    case "CHAT":
+                        body = "Please go to https://tlk.io/ and make a chat room. Then, respond with only the link and a ~ at the end.";
+                        break;
+                    case "POLL":
+                        body = "Please go http://www.poll-maker.com/ and make a poll. Then, respond with only the link and a ~ at the end.";
+                        break;
+                    case "PETITION":
+                        body = "Please go to http://www.change.org and make a petition. Then, respond with only the link and a ~ at the end.";
+                        break;
+                    case "CALL":
+                        body = "Please go to http://whoismyrepresentative.com/ to learn about how to reach your representatives and a ~ at the end.";
+                        break;
+                    default:
+                        body = "Sorry, I didn't get that. Please type 'Chat~', 'Poll~', 'Petition~' or 'Call~'.";
+                        break;
+                }
+                response.Subject = null;
+                response.Body = body;
+                response.Send();
+            }
         }
         private void CreateEmailItem(string subjectEmail,
                string toEmail, string bodyEmail)
@@ -173,6 +189,26 @@ namespace OutlookAddIn1
                     }
                 }
             }return null;
+        }
+
+        public List<Outlook.ContactItem> findZipContacts(string zip)
+        {
+            var listOfContacts = new List<Outlook.ContactItem>();
+            string contactMessage = string.Empty;
+            Outlook.MAPIFolder contacts = (Outlook.MAPIFolder)
+                this.Application.ActiveExplorer().Session.GetDefaultFolder
+                 (Outlook.OlDefaultFolders.olFolderContacts);
+            foreach (Outlook.ContactItem foundContact in contacts.Items)
+            {
+                if(foundContact.FirstName != null)
+                {
+                    if (foundContact.FirstName == zip)
+                    {
+                        listOfContacts.Add(foundContact);
+                    }
+                }
+            }
+            return listOfContacts;
         }
         private Outlook.ContactItem AddContact(String mailAddress)
         {
@@ -215,6 +251,11 @@ namespace OutlookAddIn1
             return true;
         }
 
+        public bool isUrl(string uriName) { Uri uriResult;
+            bool result = Uri.TryCreate(uriName, UriKind.Absolute, out uriResult)
+                && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+            return result;
+        }
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
             // Note: Outlook no longer raises this event. If you have code that 
