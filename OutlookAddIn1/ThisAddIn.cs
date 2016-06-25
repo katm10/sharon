@@ -123,9 +123,10 @@ namespace OutlookAddIn1
                 string url = body2Split[0];
                 List<Outlook.ContactItem> zipContacts = findZipContacts(zip);
                 foreach (Outlook.ContactItem contact in zipContacts)
-                {
-                    this.CreateEmailItem(null, contact
-                        .Email2Address, url);
+                {if (contact.Email2Address != null)
+                    {
+                        this.CreateEmailItem(null, contact.Email2Address, url);
+                    }
                 }
 
             }
@@ -143,7 +144,12 @@ namespace OutlookAddIn1
                         body = "Please go to http://www.change.org and make a petition. Then, respond with only the link and a ~ at the end.";
                         break;
                     case "CALL":
-                        body = "Please go to http://whoismyrepresentative.com/ to learn about how to reach your representatives and a ~ at the end.";
+                        body = "Please go to http://whoismyrepresentative.com/ to learn about how to reach your representatives.";
+                        break;
+                    case "STOP":
+                        body = "You are no longer part of the Sharon community.";
+                        Outlook.ContactItem contact = AddContact(mail.SenderEmailAddress);
+                        contact.Delete();
                         break;
                     default:
                         body = "Sorry, I didn't get that. Please type 'Chat~', 'Poll~', 'Petition~' or 'Call~'.";
@@ -163,13 +169,13 @@ namespace OutlookAddIn1
             eMail.To = toEmail;
             eMail.Body = bodyEmail;
             eMail.Importance = Outlook.OlImportance.olImportanceLow;
-            ((Outlook._MailItem)eMail).Send();
+            eMail.Send();
         }
 
         private Outlook.ContactItem SearchforEmail(string Address)
         {
             string contactMessage = string.Empty;
-            Outlook.MAPIFolder contacts = (Outlook.MAPIFolder)
+            Outlook.MAPIFolder contacts =
                 this.Application.ActiveExplorer().Session.GetDefaultFolder
                  (Outlook.OlDefaultFolders.olFolderContacts);
             foreach (Outlook.ContactItem foundContact in contacts.Items)
@@ -187,6 +193,7 @@ namespace OutlookAddIn1
                     {
                         return foundContact;
                     }
+
                 }
             }return null;
         }
@@ -195,7 +202,7 @@ namespace OutlookAddIn1
         {
             var listOfContacts = new List<Outlook.ContactItem>();
             string contactMessage = string.Empty;
-            Outlook.MAPIFolder contacts = (Outlook.MAPIFolder)
+            Outlook.MAPIFolder contacts =
                 this.Application.ActiveExplorer().Session.GetDefaultFolder
                  (Outlook.OlDefaultFolders.olFolderContacts);
             foreach (Outlook.ContactItem foundContact in contacts.Items)
@@ -234,10 +241,8 @@ namespace OutlookAddIn1
 
         private void SendFirstText(Outlook.ContactItem contact)
         {
-            string bodyEmail = $"Hello! Welcome to the Sharon Community! You are part of the {contact.FirstName} community. If you want to change your zip code, write an email to sharoncommunity@outlook.com with only your zip code and make the subject 'Zip Code'. If you would like to stop recieving texts, text 'STOP'. ";
-            Outlook.MailItem first = new Outlook.MailItem();
-            first.Body = bodyEmail;
-            first.Send();
+            string bodyEmail = $"Hello! Welcome to the Sharon Community! You are part of the {contact.FirstName} community. If you want to change your zip code, write an email to sharoncommunity@outlook.com with only your zip code and make the subject 'Zip Code'. If you would like to stop recieving texts, text 'Stop~'. ";
+            this.CreateEmailItem(null, contact.Email2Address, bodyEmail);
         }
 
         public bool IsDigitsOnly(string str)
